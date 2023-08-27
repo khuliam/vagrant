@@ -1,0 +1,42 @@
+Vagrant.configure("2") do |config|
+  config.vm.network "public_network", bridge: "wlp3s0"
+  config.vm.box = "~/EASYTRaning.fr/vmbox/jenkins.box"
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "Serveur"
+    vb.memory = 1024
+    vb.cpus = 1
+
+  #Définition des variables
+  hostname="jenkins.dev.local.ca"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    # Installer net-tools
+    sudo apt-get install net-tools -y
+
+    # Définir le hostname
+    sudo hostnamectl set-hostname #{hostname}
+
+    #Récupérer l'adresse IP
+    ip_address=$(ifconfig eth1 | awk '/inet / {print $2}')
+
+    # mettre à jours le fichier hosts
+    echo "127.0.0.1     localhost" | sudo tee /tmp/hosts
+    echo "127.0.0.2     bullseye" | sudo tee -a /tmp/hosts
+    echo "$ip_address #{hostname} db" | sudo tee -a /tmp/hosts
+
+    # Remplacer le fichier /etc/hosts par le fichier temporaire
+    sudo mv /tmp/hosts /etc/hosts
+
+    # Créer un fichier temporaire avec les nouvelles configurations DNS
+    echo "nameserver 192.168.8.103" | sudo tee /tmp/resolv.conf
+    echo "nameserver 192.168.8.1" | sudo tee -a /tmp/resolv.conf
+
+    # Remplacer le fichier /etc/resolv.conf par le fichier temporaire
+    sudo mv /tmp/resolv.conf /etc/resolv.conf
+
+    # Afficher l'adresse ip de l'interface
+    echo "Adresse IP de eth1 : $ip_address"
+  SHELL
+
+  end
+end

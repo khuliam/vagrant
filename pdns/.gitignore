@@ -1,0 +1,4 @@
+# Ignore log files
+.vagrant
+*.old
+
